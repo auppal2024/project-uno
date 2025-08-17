@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Special Message</title>
+    <style>
+        /* CSS for styling the environment, emojis, and text */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Important: Prevents scrollbars */
+            background-color: #1a1a1d; /* Dark background from before */
+        }
+
+        /* The container for the bouncing emojis (acts as the background) */
+        #animation-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Places it behind the text */
+        }
+
+        .emoji {
+            position: absolute;
+            font-size: 2.5rem;
+            user-select: none;
+            will-change: transform;
+        }
+
+        /* --- New styles for the centered text --- */
+        #center-text {
+            /* Positioning to perfectly center the text */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2; /* Ensures text is on top of emojis */
+
+            /* Text styling */
+            color: white;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 5vw; /* Responsive font size */
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap; /* Prevents the text from wrapping */
+            text-shadow: 0 0 15px rgba(255, 105, 180, 0.8); /* Pinkish glow */
+            transition: transform 0.5s ease-in-out; /* Smooth transition for any future effects */
+        }
+
+        /* The class that triggers the spin animation */
+        #center-text.spinning {
+            animation: spin-twice 1s ease-in-out;
+        }
+        
+        /* Keyframes for the double spin animation */
+        @keyframes spin-twice {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            to {
+                transform: translate(-50%, -50%) rotate(720deg); /* 360 * 2 = 720 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="animation-container"></div>
+
+    <div id="center-text"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- BOUNCING EMOJI LOGIC (from previous code) ---
+            const container = document.getElementById('animation-container');
+            const numberOfEmojis = 30;
+            const emojis = [];
+            const emojiPalette = ['💕', '😘', '🥰', '😙', '❤️', '💖', '💞', '💓', '💗', '💘', '💝', '😗', '😚', '😍', '🤩'];
+
+            class BouncingEmoji {
+                constructor() {
+                    this.element = document.createElement('span');
+                    this.element.classList.add('emoji');
+                    const randomIndex = Math.floor(Math.random() * emojiPalette.length);
+                    this.element.innerHTML = emojiPalette[randomIndex];
+                    container.appendChild(this.element);
+                    this.containerWidth = container.clientWidth;
+                    this.containerHeight = container.clientHeight;
+                    this.elementWidth = this.element.clientWidth;
+                    this.elementHeight = this.element.clientHeight;
+                    this.x = Math.random() * (this.containerWidth - this.elementWidth);
+                    this.y = Math.random() * (this.containerHeight - this.elementHeight);
+                    const speed = 3;
+                    this.dx = (Math.random() - 0.5) * speed;
+                    this.dy = (Math.random() - 0.5) * speed;
+                }
+                update() {
+                    this.x += this.dx;
+                    this.y += this.dy;
+                    if (this.x + this.elementWidth >= this.containerWidth || this.x <= 0) {
+                        this.dx *= -1; this.x = Math.max(0, Math.min(this.x, this.containerWidth - this.elementWidth));
+                    }
+                    if (this.y + this.elementHeight >= this.containerHeight || this.y <= 0) {
+                        this.dy *= -1; this.y = Math.max(0, Math.min(this.y, this.containerHeight - this.elementHeight));
+                    }
+                    this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+                }
+                handleResize() {
+                    this.containerWidth = container.clientWidth;
+                    this.containerHeight = container.clientHeight;
+                    if (this.x + this.elementWidth > this.containerWidth) { this.x = this.containerWidth - this.elementWidth; }
+                    if (this.y + this.elementHeight > this.containerHeight) { this.y = this.containerHeight - this.elementHeight; }
+                }
+            }
+
+            for (let i = 0; i < numberOfEmojis; i++) { emojis.push(new BouncingEmoji()); }
+            function animateEmojis() {
+                emojis.forEach(emoji => emoji.update());
+                requestAnimationFrame(animateEmojis);
+            }
+            animateEmojis();
+            
+            // --- NEW LOGIC FOR DYNAMIC TEXT ---
+            const textElement = document.getElementById('center-text');
+            let currentOrientation = '';
+
+            function handleOrientationChange() {
+                // Determine if the screen is portrait or landscape
+                const newOrientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+
+                // Check if the orientation has actually changed
+                if (newOrientation !== currentOrientation) {
+                    // Update the text based on the new orientation
+                    if (newOrientation === 'portrait') {
+                        textElement.textContent = 'I love you Papa';
+                    } else {
+                        textElement.textContent = 'I love you too M2';
+                    }
+
+                    // Trigger the spin animation by adding the class
+                    textElement.classList.add('spinning');
+                    
+                    // IMPORTANT: Remove the class after the animation ends
+                    // so it can be re-triggered on the next orientation change.
+                    textElement.addEventListener('animationend', () => {
+                        textElement.classList.remove('spinning');
+                    }, { once: true }); // {once: true} makes the listener self-destruct after one use.
+
+                    // Update the state for the next check
+                    currentOrientation = newOrientation;
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+            window.addEventListener('resize', () => {
+                // Handle both emojis and text on resize
+                emojis.forEach(emoji => emoji.handleResize());
+                handleOrientationChange();
+            });
+
+            // Initial setup on page load
+            handleOrientationChange();
+        });
+    </script>
+</body>
+</html>
